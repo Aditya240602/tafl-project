@@ -56,3 +56,26 @@ This tool helps students understand:
 ---
 
 ## 📂 Project Structure
+.
+├── index.html
+├── styles.css
+├── script.js
+
+---
+
+## 🎯 Objective
+
+The main objective of this project is to simplify the understanding of Context-Free Grammars (CFGs) by providing an interactive visualization of derivations and parse trees.
+
+---
+
+## 📎 GitHub Repository
+
+https://github.com/Aditya240602/tafl-project
+
+---
+
+## 🙌 Acknowledgment
+
+This project was developed as part of academic coursework to enhance understanding of Theory of Computation concepts.
+
