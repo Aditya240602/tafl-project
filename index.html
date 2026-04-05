@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CFG Derivation & Parse Tree Visualizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <circle cx="9" cy="3"  r="2.5" fill="white"/>
+            <circle cx="3"  cy="14" r="2.5" fill="rgba(255,255,255,0.7)"/>
+            <circle cx="15" cy="14" r="2.5" fill="rgba(255,255,255,0.7)"/>
+            <line x1="9" y1="5.5" x2="3"  y2="11.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="9" y1="5.5" x2="15" y2="11.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="brand-title">CFG Visualizer</h1>
+          <p class="brand-sub">grammar derivations &amp; parse trees</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+          <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+        <button class="chip-btn" id="example-btn">Load Example</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Main Layout ─────────────────────────────────────── -->
+  <main class="main-layout">
+
+    <!-- LEFT: Input Panel -->
+    <aside class="input-panel glass-card">
+
+      <!-- Grammar Input -->
+      <section class="input-section">
+        <label class="section-label">
+          <span class="label-dot dot-accent"></span>
+          Grammar Rules
+          <span class="label-hint">one rule per line &middot; use <code>-&gt;</code> or <code>&rarr;</code></span>
+        </label>
+        <div class="textarea-wrapper">
+          <textarea id="grammar-input" spellcheck="false" placeholder="S -> AB | BC&#10;A -> BA | a&#10;B -> CC | b&#10;C -> AB | a"></textarea>
+          <div class="textarea-counter" id="rule-count">0 rules</div>
+        </div>
+      </section>
+
+      <!-- String Input -->
+      <section class="input-section">
+        <label class="section-label">
+          <span class="label-dot dot-accent2"></span>
+          Input String
+          <span class="label-hint">space-separated or concatenated</span>
+        </label>
+        <div class="string-input-row">
+          <input type="text" id="string-input" placeholder="e.g.  baaba" spellcheck="false" />
+          <div class="start-symbol-wrap">
+            <label class="mini-label">Start</label>
+            <input type="text" id="start-symbol" value="S" maxlength="4" class="start-input" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Action Buttons -->
+      <section class="btn-group">
+        <button class="action-btn btn-primary" id="btn-leftmost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+          Leftmost Derivation
+        </button>
+        <button class="action-btn btn-secondary" id="btn-rightmost">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
+          Rightmost Derivation
+        </button>
+        <button class="action-btn btn-tree" id="btn-tree">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="4" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><line x1="12" y1="6" x2="5" y2="17"/><line x1="12" y1="6" x2="19" y2="17"/></svg>
+          Generate Parse Tree
+        </button>
+        <button class="action-btn btn-clear" id="btn-clear">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          Clear All
+        </button>
+      </section>
+
+      <!-- Grammar Rules Display -->
+      <section class="grammar-display" id="grammar-display">
+        <div class="section-label">
+          <span class="label-dot dot-accent3"></span>
+          Parsed Rules
+        </div>
+        <div id="parsed-rules-list" class="parsed-rules">
+          <p class="empty-hint">Enter grammar rules above to see them parsed here.</p>
+        </div>
+      </section>
+
+    </aside>
+
+    <!-- RIGHT: Output Panel -->
+    <div class="output-panel">
+
+      <!-- Status Bar -->
+      <div class="status-bar" id="status-bar">
+        <div class="status-idle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Enter a grammar and string, then click a button below.
+        </div>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="tab-nav">
+        <button class="tab-btn active" data-tab="derivation">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Derivation Steps
+        </button>
+        <button class="tab-btn" data-tab="tree">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3 3m3-3l3 3M5 12H2m3 0l3 3m-3-3l3-3M19 12h3m-3 0l-3 3m3-3l-3-3"/></svg>
+          Parse Tree
+        </button>
+        <div class="tab-indicator"></div>
+      </div>
+
+      <!-- Derivation Tab -->
+      <div class="tab-content active" id="tab-derivation">
+        <div class="derivation-header" id="deriv-header" style="display:none">
+          <div class="deriv-meta">
+            <span class="deriv-type-badge" id="deriv-type-badge">Leftmost</span>
+            <span class="deriv-info" id="deriv-info"></span>
+          </div>
+          <button class="icon-btn" id="replay-btn" title="Replay animation">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+          </button>
+        </div>
+        <div class="steps-container" id="steps-container">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="14" r="6" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="12" cy="36" r="6" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="36" cy="36" r="6" stroke="var(--accent3)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="24" y1="20" x2="12" y2="30" stroke="var(--border)" stroke-width="1.5"/><line x1="24" y1="20" x2="36" y2="30" stroke="var(--border)" stroke-width="1.5"/></svg>
+            </div>
+            <p class="empty-title">Nothing here yet</p>
+            <p class="empty-sub">Type in a grammar, enter a string, and hit one of the derivation buttons</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tree Tab -->
+      <div class="tab-content" id="tab-tree">
+        <div class="tree-toolbar" id="tree-toolbar" style="display:none">
+          <div class="zoom-controls">
+            <button class="icon-btn" id="zoom-out">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </button>
+            <span class="zoom-label" id="zoom-label">100%</span>
+            <button class="icon-btn" id="zoom-in">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+            </button>
+            <button class="icon-btn" id="zoom-reset" title="Fit to screen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            </button>
+          </div>
+          <button class="chip-btn chip-btn-sm" id="export-btn">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export PNG
+          </button>
+        </div>
+        <div class="tree-container" id="tree-container">
+          <div class="empty-state">
+            <div class="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="16" y="4" width="16" height="12" rx="3" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/><rect x="4" y="32" width="14" height="12" rx="3" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="3 2"/><rect x="30" y="32" width="14" height="12" rx="3" stroke="var(--accent3)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="24" y1="16" x2="11" y2="32" stroke="var(--border)" stroke-width="1.5"/><line x1="24" y1="16" x2="37" y2="32" stroke="var(--border)" stroke-width="1.5"/></svg>
+            </div>
+            <p class="empty-title">No parse tree yet</p>
+            <p class="empty-sub">Click "Generate Parse Tree" once you have a grammar and string set up</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
