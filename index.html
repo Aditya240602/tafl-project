@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CFG Derivation & Parse Tree Visualizer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -37,6 +37,25 @@
       </div>
     </div>
   </header>
+
+  <!-- ── Intro Section (Separate) ───────────────────────────── -->
+  <section class="topic-intro-wrap">
+    <div class="topic-intro intro-panel">
+      <p class="intro-kicker">Quick Intro</p>
+      <h2 class="intro-title">Context-Free Grammar, Derivation, and Parse Tree</h2>
+      <p class="intro-text">
+        A context-free grammar (CFG) defines how strings are formed using production rules. A derivation shows
+        how the start symbol is rewritten step by step into the target string. A parse tree is the structural
+        view of the same process, where each expansion becomes child nodes in a tree.
+      </p>
+      <div class="intro-points">
+        <p><strong>Leftmost derivation:</strong> always expand the leftmost nonterminal first.</p>
+        <p><strong>Rightmost derivation:</strong> always expand the rightmost nonterminal first.</p>
+        <p><strong>Parse tree:</strong> records the hierarchy of expansions from root (start symbol) to terminal leaves.</p>
+      </div>
+      <div class="process-start-banner">Our Process Starts Here</div>
+    </div>
+  </section>
 
   <!-- ── Main Layout ─────────────────────────────────────── -->
   <main class="main-layout">
@@ -109,6 +128,11 @@
     <!-- RIGHT: Output Panel -->
     <div class="output-panel">
 
+      <section class="process-header">
+        <h2 class="process-title">Generation Process</h2>
+        <p class="process-sub">Generate derivations and parse trees with rule usage shown side by side.</p>
+      </section>
+
       <!-- Status Bar -->
       <div class="status-bar" id="status-bar">
         <div class="status-idle">
@@ -141,13 +165,21 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
           </button>
         </div>
-        <div class="steps-container" id="steps-container">
-          <div class="empty-state">
-            <div class="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="14" r="6" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="12" cy="36" r="6" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="36" cy="36" r="6" stroke="var(--accent3)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="24" y1="20" x2="12" y2="30" stroke="var(--border)" stroke-width="1.5"/><line x1="24" y1="20" x2="36" y2="30" stroke="var(--border)" stroke-width="1.5"/></svg>
+        <div class="process-grid" id="deriv-process-grid">
+          <div class="rules-column">
+            <div class="rules-trace" id="rules-trace" style="display:none"></div>
+          </div>
+          <div class="work-column">
+            <div class="explain-panel" id="deriv-explainer" style="display:none"></div>
+            <div class="steps-container" id="steps-container">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="14" r="6" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="12" cy="36" r="6" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="3 2"/><circle cx="36" cy="36" r="6" stroke="var(--accent3)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="24" y1="20" x2="12" y2="30" stroke="var(--border)" stroke-width="1.5"/><line x1="24" y1="20" x2="36" y2="30" stroke="var(--border)" stroke-width="1.5"/></svg>
+                </div>
+                <p class="empty-title">Nothing here yet</p>
+                <p class="empty-sub">Type in a grammar, enter a string, and hit one of the derivation buttons</p>
+              </div>
             </div>
-            <p class="empty-title">Nothing here yet</p>
-            <p class="empty-sub">Type in a grammar, enter a string, and hit one of the derivation buttons</p>
           </div>
         </div>
       </div>
@@ -172,13 +204,21 @@
             Export PNG
           </button>
         </div>
-        <div class="tree-container" id="tree-container">
-          <div class="empty-state">
-            <div class="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="16" y="4" width="16" height="12" rx="3" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/><rect x="4" y="32" width="14" height="12" rx="3" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="3 2"/><rect x="30" y="32" width="14" height="12" rx="3" stroke="var(--accent3)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="24" y1="16" x2="11" y2="32" stroke="var(--border)" stroke-width="1.5"/><line x1="24" y1="16" x2="37" y2="32" stroke="var(--border)" stroke-width="1.5"/></svg>
+        <div class="process-grid" id="tree-process-grid">
+          <div class="rules-column">
+            <div class="rules-trace tree-rules-trace" id="tree-rules-trace" style="display:none"></div>
+          </div>
+          <div class="work-column">
+            <div class="explain-panel tree-explain-panel" id="tree-explainer" style="display:none"></div>
+            <div class="tree-container" id="tree-container">
+              <div class="empty-state">
+                <div class="empty-icon">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><rect x="16" y="4" width="16" height="12" rx="3" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 2"/><rect x="4" y="32" width="14" height="12" rx="3" stroke="var(--accent2)" stroke-width="1.5" stroke-dasharray="3 2"/><rect x="30" y="32" width="14" height="12" rx="3" stroke="var(--accent3)" stroke-width="1.5" stroke-dasharray="3 2"/><line x1="24" y1="16" x2="11" y2="32" stroke="var(--border)" stroke-width="1.5"/><line x1="24" y1="16" x2="37" y2="32" stroke="var(--border)" stroke-width="1.5"/></svg>
+                </div>
+                <p class="empty-title">No parse tree yet</p>
+                <p class="empty-sub">Click "Generate Parse Tree" once you have a grammar and string set up</p>
+              </div>
             </div>
-            <p class="empty-title">No parse tree yet</p>
-            <p class="empty-sub">Click "Generate Parse Tree" once you have a grammar and string set up</p>
           </div>
         </div>
       </div>

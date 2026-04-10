@@ -45,6 +45,10 @@ const derivTypeBadge  = $('deriv-type-badge');
 const derivInfo       = $('deriv-info');
 const treeToolbar     = $('tree-toolbar');
 const zoomLabel       = $('zoom-label');
+const rulesTrace      = $('rules-trace');
+const treeRulesTrace  = $('tree-rules-trace');
+const derivExplainer  = $('deriv-explainer');
+const treeExplainer   = $('tree-explainer');
 
 /* ──────────────────────────────────────────
    GRAMMAR PARSER
@@ -342,10 +346,11 @@ function renderDerivationSteps(steps, mode, grammar) {
 
   derivTypeBadge.textContent = mode === 'leftmost' ? 'Leftmost' : 'Rightmost';
   derivTypeBadge.style.background = mode === 'leftmost'
-    ? 'linear-gradient(135deg, var(--accent), #818cf8)'
-    : 'linear-gradient(135deg, #0e7490, var(--accent2))';
+    ? 'linear-gradient(135deg, var(--accent), var(--accent3))'
+    : 'linear-gradient(135deg, var(--accent2), var(--accent3))';
 
   derivInfo.textContent = `${steps.length - 1} derivation step${steps.length === 2 ? '' : 's'}`;
+  renderAppliedRuleTrace(steps, rulesTrace, `${mode === 'leftmost' ? 'Leftmost' : 'Rightmost'} Rule Sequence`);
 
   steps.forEach((step, i) => {
     const isFirst = i === 0;
@@ -394,6 +399,120 @@ function renderDerivationSteps(steps, mode, grammar) {
 
     state.animTimers.push(timer);
   });
+}
+
+/**
+ * Render the production rules used in order for a generated derivation.
+ */
+function renderAppliedRuleTrace(steps, container, title) {
+  if (!container) return;
+
+  const applied = steps
+    .map((step, idx) => ({ idx, rule: step.rule }))
+    .filter(item => item.rule);
+
+  if (!applied.length) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  const itemsHtml = applied.map((item, seqIdx) => {
+    const rhs = item.rule.rhs.length ? item.rule.rhs.join(' ') : 'ε';
+    return `
+      <div class="trace-item">
+        <span class="trace-step">R${seqIdx + 1}</span>
+        <span class="trace-prod">${escapeHtml(item.rule.lhs)} → ${escapeHtml(rhs)}</span>
+      </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="trace-title">${escapeHtml(title)} (${applied.length})</div>
+    <div class="trace-list">${itemsHtml}</div>
+  `;
+  container.style.display = 'block';
+}
+
+/**
+ * Render explanatory text describing what happens in each generation step.
+ */
+function renderStepExplanations({ steps, mode, start, target, container, title }) {
+  if (!container || !steps || !steps.length) return;
+
+  const modeLabel = mode === 'rightmost' ? 'rightmost' : 'leftmost';
+  const targetDisplay = target.length ? target.join(' ') : 'ε';
+
+  const staticLines = [
+    'Read grammar and parse production rules into structured alternatives.',
+    `Tokenize input string as terminal sequence: ${escapeHtml(targetDisplay)}.`,
+    `Start derivation from the start symbol ${escapeHtml(start)}.`,
+    `At each step, expand exactly one nonterminal using ${modeLabel} strategy.`,
+    'Stop when all symbols are terminals and match the target input.',
+  ];
+
+  const dynamicLines = [];
+  for (let i = 1; i < steps.length; i++) {
+    const prev = steps[i - 1];
+    const curr = steps[i];
+    if (!curr.rule) continue;
+
+    const rhs = curr.rule.rhs.length ? curr.rule.rhs.join(' ') : 'ε';
+    const before = prev.sentential.length ? prev.sentential.join(' ') : 'ε';
+    const after = curr.sentential.length ? curr.sentential.join(' ') : 'ε';
+
+    dynamicLines.push(
+      `Step ${i}: expanded ${curr.rule.lhs} at position ${curr.rule.pos + 1} using ${curr.rule.lhs} -> ${rhs}; ${before} => ${after}`
+    );
+  }
+
+  const staticHtml = staticLines
+    .map(line => `<div class="explain-item">• ${escapeHtml(line)}</div>`)
+    .join('');
+
+  const dynamicHtml = dynamicLines.length
+    ? dynamicLines.map(line => `<div class="dynamic-item">${escapeHtml(line)}</div>`).join('')
+    : '<div class="dynamic-item">No rewrite step generated yet.</div>';
+
+  container.innerHTML = `
+    <div class="explain-title">${escapeHtml(title)}</div>
+    <div class="explain-list">${staticHtml}</div>
+    <div class="explain-dynamic">${dynamicHtml}</div>
+  `;
+  container.style.display = 'block';
+}
+
+function renderParseTreeExplanations({ steps, start, target, container }) {
+  if (!container || !steps || !steps.length) return;
+
+  const targetDisplay = target.length ? target.join(' ') : 'ε';
+  const staticLines = [
+    `Build root node from start symbol ${escapeHtml(start)}.`,
+    'Follow a successful derivation (leftmost in this implementation).',
+    'For each applied rule, add RHS symbols as children of the expanded nonterminal node.',
+    'Mark terminal symbols as leaf nodes; nonterminals remain expandable until rewritten.',
+    `When leaf sequence matches ${escapeHtml(targetDisplay)}, finalize parse tree.`
+  ];
+
+  const dynamicLines = [];
+  for (let i = 1; i < steps.length; i++) {
+    const curr = steps[i];
+    if (!curr.rule) continue;
+    const rhs = curr.rule.rhs.length ? curr.rule.rhs.join(' ') : 'ε';
+    dynamicLines.push(
+      `Tree step ${i}: node ${curr.rule.lhs} expanded with children [${rhs}]`
+    );
+  }
+
+  container.innerHTML = `
+    <div class="explain-title">Parse Tree Construction Steps</div>
+    <div class="explain-list">
+      ${staticLines.map(line => `<div class="explain-item">• ${line}</div>`).join('')}
+    </div>
+    <div class="explain-dynamic">
+      ${dynamicLines.length ? dynamicLines.map(line => `<div class="dynamic-item">${escapeHtml(line)}</div>`).join('') : '<div class="dynamic-item">No tree step generated yet.</div>'}
+    </div>
+  `;
+  container.style.display = 'block';
 }
 
 /**
@@ -848,12 +967,24 @@ function doLeftmostDerivation() {
     if (!result) {
       setStatus('error', `"${target.join('')}" cannot be derived from ${start} (leftmost). Check grammar and string.`);
       stepsContainer.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><p class="empty-title">No Derivation Found</p><p class="empty-sub">The string may not be in the language of this grammar.</p></div>`;
+      rulesTrace.style.display = 'none';
+      rulesTrace.innerHTML = '';
+      derivExplainer.style.display = 'none';
+      derivExplainer.innerHTML = '';
       return;
     }
     setStatus('success', `Leftmost derivation found — ${result.steps.length - 1} step${result.steps.length === 2 ? '' : 's'}`);
     state.derivationSteps = result.steps;
     state.parseTree       = result.tree;
     renderDerivationSteps(result.steps, 'leftmost', grammar);
+    renderStepExplanations({
+      steps: result.steps,
+      mode: 'leftmost',
+      start,
+      target,
+      container: derivExplainer,
+      title: 'Leftmost Derivation: What Happens Internally',
+    });
   }, 50);
 }
 
@@ -871,12 +1002,24 @@ function doRightmostDerivation() {
     if (!result) {
       setStatus('error', `"${target.join('')}" cannot be derived from ${start} (rightmost).`);
       stepsContainer.innerHTML = `<div class="empty-state"><p class="empty-title">No Derivation Found</p><p class="empty-sub">The string may not be in the language of this grammar.</p></div>`;
+      rulesTrace.style.display = 'none';
+      rulesTrace.innerHTML = '';
+      derivExplainer.style.display = 'none';
+      derivExplainer.innerHTML = '';
       return;
     }
     setStatus('success', `Rightmost derivation found — ${result.steps.length - 1} step${result.steps.length === 2 ? '' : 's'}`);
     state.derivationSteps = result.steps;
     state.parseTree       = result.tree;
     renderDerivationSteps(result.steps, 'rightmost', grammar);
+    renderStepExplanations({
+      steps: result.steps,
+      mode: 'rightmost',
+      start,
+      target,
+      container: derivExplainer,
+      title: 'Rightmost Derivation: What Happens Internally',
+    });
   }, 50);
 }
 
@@ -896,12 +1039,18 @@ function doParseTree() {
       setStatus('error', `Cannot build parse tree — "${target.join('')}" is not in L(G).`);
       treeContainer.innerHTML = `<div class="empty-state"><p class="empty-title">No Parse Tree</p><p class="empty-sub">The string cannot be derived from this grammar.</p></div>`;
       treeToolbar.style.display = 'none';
+      treeRulesTrace.style.display = 'none';
+      treeRulesTrace.innerHTML = '';
+      treeExplainer.style.display = 'none';
+      treeExplainer.innerHTML = '';
       return;
     }
 
     setStatus('success', `Parse tree generated for "${target.join(' ') || 'ε'}"`);
     state.parseTree = result.tree;
     treeToolbar.style.display = 'flex';
+    renderAppliedRuleTrace(result.steps, treeRulesTrace, 'Rules Used For Parse Tree');
+    renderParseTreeExplanations({ steps: result.steps, start, target, container: treeExplainer });
     treeContainer.innerHTML = '';
     state.zoom = 1.0;
     zoomLabel.textContent = '100%';
@@ -928,6 +1077,14 @@ function clearAll() {
 
   derivHeader.style.display  = 'none';
   treeToolbar.style.display  = 'none';
+  rulesTrace.style.display   = 'none';
+  rulesTrace.innerHTML       = '';
+  treeRulesTrace.style.display = 'none';
+  treeRulesTrace.innerHTML     = '';
+  derivExplainer.style.display = 'none';
+  derivExplainer.innerHTML = '';
+  treeExplainer.style.display = 'none';
+  treeExplainer.innerHTML = '';
 
   renderParsedRules(null);
   setStatus('idle', 'Enter a grammar and string, then click a derivation button to begin.');
@@ -967,6 +1124,60 @@ const EXAMPLES = [
     name:    'Balanced Parens',
     grammar: 'S -> S S | ( S ) | ε',
     string:  '( ) ( )',
+    start:   'S',
+  },
+  {
+    name:    'Equal a and b Count',
+    grammar: 'S -> a S b | ε',
+    string:  'a a a b b b',
+    start:   'S',
+  },
+  {
+    name:    'Binary Strings',
+    grammar: 'S -> 0 S | 1 S | ε',
+    string:  '1 0 1 1 0',
+    start:   'S',
+  },
+  {
+    name:    'Identifier List',
+    grammar: 'L -> id | id , L',
+    string:  'id , id , id',
+    start:   'L',
+  },
+  {
+    name:    'Single Pair Parens',
+    grammar: 'S -> ( S ) | a',
+    string:  '( ( a ) )',
+    start:   'S',
+  },
+  {
+    name:    'Simple Assignment',
+    grammar: 'S -> id = E\nE -> E + T | T\nT -> id | num',
+    string:  'id = id + num',
+    start:   'S',
+  },
+  {
+    name:    'aaab Language',
+    grammar: 'S -> a S | B\nB -> b',
+    string:  'a a a b',
+    start:   'S',
+  },
+  {
+    name:    'Palindromic Core',
+    grammar: 'S -> a S a | b S b | a | b | ε',
+    string:  'a b b a',
+    start:   'S',
+  },
+  {
+    name:    'Impossible: Unequal a and b',
+    grammar: 'S -> a S b | ε',
+    string:  'a a b',
+    start:   'S',
+  },
+  {
+    name:    'Impossible: Unbalanced Parentheses',
+    grammar: 'S -> S S | ( S ) | ε',
+    string:  '( ( )',
     start:   'S',
   },
 ];
