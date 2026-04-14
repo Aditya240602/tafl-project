@@ -327,9 +327,7 @@ function findUnexpandedNode(node, nonterminals, mode) {
   return mode === 'rightmost' ? candidates[candidates.length - 1] : candidates[0];
 }
 
-/* ──────────────────────────────────────────
-   RENDERING — DERIVATION STEPS
-────────────────────────────────────────── */
+
 
 /**
  * Render derivation steps with staggered animation
